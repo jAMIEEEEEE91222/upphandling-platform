@@ -1,3 +1,13 @@
+import { z } from "zod";
+
+export const CreateProcurementSchema = z.object({
+  title: z.string().min(1, "Titel krävs").max(200, "Max 200 tecken"),
+  category: z.string().min(1, "Kategori krävs").max(100, "Max 100 tecken"),
+  referenceNumber: z.string().optional(),
+});
+
+export type CreateProcurementInput = z.infer<typeof CreateProcurementSchema>;
+
 export type ProcurementStatus = "DRAFT" | "IMPORTED" | "ANALYZED" | "REPORTED";
 
 export interface Procurement {
