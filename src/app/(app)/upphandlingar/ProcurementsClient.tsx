@@ -10,9 +10,9 @@ import { useProcurements } from "@/hooks/useProcurements";
 
 export default function ProcurementsClient({ initialData }: { initialData: ProcurementWithCounts[] }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { procurements, remove, refresh } = useProcurements();
+  const { procurements, remove, refresh, isLoading } = useProcurements();
   
-  const displayData = procurements.length > 0 ? procurements : initialData;
+  const displayData = isLoading && procurements.length === 0 ? initialData : procurements;
 
   const handleSuccess = () => {
     setIsDialogOpen(false);

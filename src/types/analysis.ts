@@ -1,47 +1,41 @@
-export type FlagLevel = "NORMAL" | "WARNING" | "CRITICAL";
-
-export interface AnalysisResult {
-  id: string;
-  procurementId: string;
-  analyzedAt: string;
-  totalItems: number;
-  totalBids: number;
-  flaggedItems: number;
-  avgZScore: number | null;
-  maxZScore: number | null;
-}
-
-export interface ItemStatistic {
-  id: string;
-  analysisResultId: string;
-  itemName: string;
-  meanPrice: string; // Decimal serialiseras som string
-  medianPrice: string;
-  stdDev: string;
-  minPrice: string;
-  maxPrice: string;
-  priceRange: string;
-  sampleSize: number;
-  hasMissingPrices: boolean;
-  hasZeroPrices: boolean;
-  suspectedCollusion: boolean;
-}
-
-export interface FlagResult {
-  id: string;
+export interface MatrixCell {
   lineItemId: string;
-  itemStatisticId: string;
-  zScore: number;
-  flagLevel: FlagLevel;
-  flagReason: string | null;
-  reviewNote: string | null;
-  reviewedAt: string | null;
+  price: number | null;
+  priceNote?: string | null;
+  flagLevel: "NORMAL" | "WARNING" | "CRITICAL" | null;
+  flagReason?: string | null;
+  zScore?: number | null;
+  flagResultId?: string | null;
 }
 
-export interface Report {
-  id: string;
-  procurementId: string;
-  generatedAt: string;
-  filePath: string;
-  fileSize: number | null;
+export interface MatrixRow {
+  itemName: string;
+  itemCode?: string | null;
+  unit?: string | null;
+  highestFlagLevel: "NORMAL" | "WARNING" | "CRITICAL" | null;
+  stats: {
+    mean: number;
+    median: number;
+    stdDev: number;
+    min: number;
+    max: number;
+    sampleSize: number;
+    hasMissingPrices: boolean;
+    hasZeroPrices: boolean;
+    suspectedCollusion: boolean;
+  };
+  cells: Record<string, MatrixCell>; // supplierName → cell
+}
+
+export interface DeviationMatrixData {
+  suppliers: string[];
+  rows: MatrixRow[];
+  summary: {
+    totalItems: number;
+    totalBids: number;
+    flaggedItems: number;
+    flaggedCritical: number;
+    flaggedWarning: number;
+    analyzedAt: string;
+  };
 }

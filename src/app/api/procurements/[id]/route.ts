@@ -4,8 +4,9 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ data: null, error: "Ej autentiserad" }, { status: 401 });
@@ -14,7 +15,7 @@ export async function GET(
   try {
     const procurement = await prisma.procurement.findUnique({
       where: {
-        id: params.id,
+        id,
       },
       include: {
         bids: {
@@ -47,8 +48,9 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ data: null, error: "Ej autentiserad" }, { status: 401 });
@@ -56,7 +58,7 @@ export async function DELETE(
 
   try {
     const procurement = await prisma.procurement.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { createdById: true },
     });
 
@@ -69,7 +71,7 @@ export async function DELETE(
     }
 
     await prisma.procurement.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ data: { success: true }, error: null }, { status: 200 });

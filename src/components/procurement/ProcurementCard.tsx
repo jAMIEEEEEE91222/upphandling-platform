@@ -1,11 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ProcurementWithCounts } from "@/types/procurement";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { AlertTriangle } from "lucide-react";
 
 interface ProcurementCardProps {
   procurement: ProcurementWithCounts;
@@ -27,15 +40,13 @@ const statusLabels = {
 };
 
 export default function ProcurementCard({ procurement, onDelete }: ProcurementCardProps) {
+  const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleDelete = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!window.confirm("Är du säker på att du vill ta bort upphandlingen?")) return;
-    
+  const handleDelete = async () => {
     setIsDeleting(true);
     await onDelete(procurement.id);
+    router.refresh();
     setIsDeleting(false);
   };
 
@@ -56,21 +67,49 @@ export default function ProcurementCard({ procurement, onDelete }: ProcurementCa
           {statusLabels[procurement.status]}
         </Badge>
       </CardHeader>
-      <CardContent className="mt-auto pt-4 border-t">
+      <CardContent className="mt-auto pt-4 border-t relative z-10">
         <div className="flex justify-between items-center">
           <div className="text-sm text-muted-foreground flex gap-4">
             <span>{new Date(procurement.createdAt).toLocaleDateString("sv-SE")}</span>
             <span>• {procurement._count?.bids ?? 0} leverantörer</span>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-red-500 hover:text-red-700 hover:bg-red-50 z-10 relative" 
-            disabled={isDeleting}
-            onClick={handleDelete}
-          >
-            Ta bort
-          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger render={
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-red-500 hover:text-red-700 hover:bg-red-50" 
+                disabled={isDeleting}
+              />
+            }>
+              Ta bort
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <div className="flex items-center gap-2 text-destructive mb-2">
+                  <AlertTriangle className="size-5" />
+                  <AlertDialogTitle>Ta bort upphandling</AlertDialogTitle>
+                </div>
+                <AlertDialogDescription>
+                  Är du säker på att du vill ta bort &quot;{procurement.title}&quot;? 
+                  Denna åtgärd går inte att ångra och all tillhörande data (anbud, rader, analys) kommer att raderas permanent.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Nej, avbryt</AlertDialogCancel>
+                <AlertDialogAction 
+                  variant="destructive" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete();
+                  }}
+                >
+                  Ja, ta bort
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardContent>
     </Card>

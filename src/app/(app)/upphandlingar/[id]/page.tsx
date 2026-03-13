@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import RunAnalysisButton from "@/components/analysis/RunAnalysisButton";
+import AnalysisSummary from "@/components/analysis/AnalysisSummary";
 
 const statusColors = {
   DRAFT: "bg-gray-100 text-gray-800",
@@ -32,12 +34,37 @@ export default async function ProcurementDetailPage({ params }: { params: Promis
         include: {
           _count: { select: { lineItems: true } }
         }
+      },
+      analysisResult: {
+        include: {
+          itemStats: {
+            include: {
+              flagResults: true
+            }
+          }
+        }
       }
     }
   });
 
   if (!procurement || procurement.createdById !== session.user.id) {
     redirect("/upphandlingar");
+  }
+
+  let flaggedCritical = 0;
+  let flaggedWarning = 0;
+
+  if (procurement.analysisResult) {
+    for (const itemStat of procurement.analysisResult.itemStats) {
+      let hasCritical = false;
+      let hasWarning = false;
+      for (const flag of itemStat.flagResults) {
+        if (flag.flagLevel === "CRITICAL") hasCritical = true;
+        if (flag.flagLevel === "WARNING") hasWarning = true;
+      }
+      if (hasCritical) flaggedCritical++;
+      if (hasWarning && !hasCritical) flaggedWarning++;
+    }
   }
 
   return (
@@ -59,11 +86,29 @@ export default async function ProcurementDetailPage({ params }: { params: Promis
           <Link href={`/upphandlingar/${procurement.id}/import`}>
             <Button>Ladda upp prisbilaga</Button>
           </Link>
-          <Button disabled={procurement.status !== "IMPORTED"} variant="outline">Kör analys</Button>
-          <Button disabled={procurement.status !== "ANALYZED"} variant="outline">Visa avvikelser</Button>
+          <RunAnalysisButton 
+            procurementId={procurement.id} 
+            disabled={procurement.status !== "IMPORTED" && procurement.status !== "ANALYZED"} 
+          />
+          <Link href={`/upphandlingar/${procurement.id}/analys`}>
+            <Button disabled={procurement.status === "DRAFT"} variant="outline">Visa avvikelser</Button>
+          </Link>
           <Button disabled={procurement.status !== "ANALYZED"} variant="outline">Generera rapport</Button>
         </div>
       </div>
+
+      {procurement.analysisResult && (
+        <AnalysisSummary 
+          summary={{
+            totalItems: procurement.analysisResult.totalItems,
+            totalBids: procurement.analysisResult.totalBids,
+            flaggedItems: procurement.analysisResult.flaggedItems,
+            flaggedCritical,
+            flaggedWarning,
+            analyzedAt: procurement.analysisResult.analyzedAt.toISOString(),
+          }} 
+        />
+      )}
 
       <div className="bg-white rounded-lg border shadow-sm">
         <div className="px-6 py-4 border-b">
