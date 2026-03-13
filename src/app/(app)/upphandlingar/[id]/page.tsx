@@ -19,12 +19,14 @@ const statusLabels = {
   REPORTED: "Rapporterad",
 };
 
-export default async function ProcurementDetailPage({ params }: { params: { id: string } }) {
+export default async function ProcurementDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
+  const { id } = await params;
+
   const procurement = await prisma.procurement.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       bids: {
         include: {

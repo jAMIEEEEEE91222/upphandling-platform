@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Procurement } from "@/types/procurement";
+import { ProcurementWithCounts } from "@/types/procurement";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 interface ProcurementCardProps {
-  procurement: Procurement;
+  procurement: ProcurementWithCounts;
   onDelete: (id: string) => void;
 }
 
@@ -31,6 +31,7 @@ export default function ProcurementCard({ procurement, onDelete }: ProcurementCa
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!window.confirm("Är du säker på att du vill ta bort upphandlingen?")) return;
     
     setIsDeleting(true);
@@ -39,37 +40,39 @@ export default function ProcurementCard({ procurement, onDelete }: ProcurementCa
   };
 
   return (
-    <Link href={`/upphandlingar/${procurement.id}`} className="block">
-      <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
-        <CardHeader className="flex flex-row items-start justify-between pb-2 space-y-0">
-          <div>
-            <CardTitle className="text-xl font-bold">{procurement.title}</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              {procurement.category} {procurement.referenceNumber && `• ${procurement.referenceNumber}`}
-            </p>
+    <Card className="hover:shadow-md transition-shadow h-full flex flex-col relative group/card">
+      <CardHeader className="flex flex-row items-start justify-between pb-2 space-y-0">
+        <div>
+          <CardTitle className="text-xl font-bold">
+            <Link href={`/upphandlingar/${procurement.id}`} className="focus:outline-none before:absolute before:inset-0 rounded-xl">
+              {procurement.title}
+            </Link>
+          </CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            {procurement.category} {procurement.referenceNumber && `• ${procurement.referenceNumber}`}
+          </p>
+        </div>
+        <Badge className={`${statusColors[procurement.status]} border-0`}>
+          {statusLabels[procurement.status]}
+        </Badge>
+      </CardHeader>
+      <CardContent className="mt-auto pt-4 border-t">
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-muted-foreground flex gap-4">
+            <span>{new Date(procurement.createdAt).toLocaleDateString("sv-SE")}</span>
+            <span>• {procurement._count?.bids ?? 0} leverantörer</span>
           </div>
-          <Badge className={`${statusColors[procurement.status]} border-0`}>
-            {statusLabels[procurement.status]}
-          </Badge>
-        </CardHeader>
-        <CardContent className="mt-auto pt-4 border-t">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-muted-foreground flex gap-4">
-              <span>{new Date(procurement.createdAt).toLocaleDateString("sv-SE")}</span>
-              <span>• {procurement._count?.bids ?? 0} leverantörer</span>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-red-500 hover:text-red-700 hover:bg-red-50 z-10 relative" 
-              disabled={isDeleting}
-              onClick={handleDelete}
-            >
-              Ta bort
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-red-500 hover:text-red-700 hover:bg-red-50 z-10 relative" 
+            disabled={isDeleting}
+            onClick={handleDelete}
+          >
+            Ta bort
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

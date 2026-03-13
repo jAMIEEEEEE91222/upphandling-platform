@@ -5,10 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import ProcurementList from "@/components/procurement/ProcurementList";
 import ProcurementForm from "@/components/procurement/ProcurementForm";
-import { Procurement } from "@/types/procurement";
+import { ProcurementWithCounts } from "@/types/procurement";
 import { useProcurements } from "@/hooks/useProcurements";
 
-export default function ProcurementsClient({ initialData }: { initialData: Procurement[] }) {
+export default function ProcurementsClient({ initialData }: { initialData: ProcurementWithCounts[] }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { procurements, remove, refresh } = useProcurements();
   
@@ -24,8 +24,8 @@ export default function ProcurementsClient({ initialData }: { initialData: Procu
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Upphandlingar</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>+ Ny upphandling</Button>
+          <DialogTrigger render={<Button />}>
+            + Ny upphandling
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import FileUpload from "@/components/import/FileUpload";
 import ColumnMapper from "@/components/import/ColumnMapper";
@@ -11,8 +11,9 @@ import { RawExcelData, ColumnMapping } from "@/types/import";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export default function ImportPage({ params }: { params: { id: string } }) {
+export default function ImportPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const { id } = use(params);
   
   const [file, setFile] = useState<File | null>(null);
   const [data, setData] = useState<RawExcelData | null>(null);
@@ -48,7 +49,7 @@ export default function ImportPage({ params }: { params: { id: string } }) {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("procurementId", params.id);
+    formData.append("procurementId", id);
     formData.append("columnMapping", JSON.stringify(mapping));
     formData.append("supplierName", mapping.supplierName);
 
@@ -64,7 +65,7 @@ export default function ImportPage({ params }: { params: { id: string } }) {
         throw new Error(result.error || "Misslyckades att importera filen");
       }
 
-      router.push(`/upphandlingar/${params.id}`);
+      router.push(`/upphandlingar/${id}`);
       router.refresh();
       
     } catch (err: unknown) {
@@ -81,7 +82,7 @@ export default function ImportPage({ params }: { params: { id: string } }) {
     <div className="max-w-4xl mx-auto py-8 px-4 space-y-8">
       <div>
         <div className="flex items-center gap-4 mb-2">
-          <Link href={`/upphandlingar/${params.id}`} className="text-muted-foreground hover:text-foreground">
+          <Link href={`/upphandlingar/${id}`} className="text-muted-foreground hover:text-foreground">
             &larr; Tillbaka
           </Link>
           <h1 className="text-2xl font-bold tracking-tight">Importera prisbilaga</h1>

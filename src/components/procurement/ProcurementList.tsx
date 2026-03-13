@@ -1,10 +1,10 @@
 "use client";
 
-import { Procurement } from "@/types/procurement";
+import { ProcurementWithCounts } from "@/types/procurement";
 import ProcurementCard from "./ProcurementCard";
 
 interface ProcurementListProps {
-  procurements: Procurement[];
+  procurements: ProcurementWithCounts[];
   onDelete: (id: string) => Promise<void>;
 }
 

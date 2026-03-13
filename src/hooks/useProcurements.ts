@@ -1,10 +1,10 @@
 import useSWR from "swr";
-import { Procurement } from "@/types/procurement";
+import { ProcurementWithCounts } from "@/types/procurement";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json()).then(res => res.data);
 
 export function useProcurements() {
-  const { data, error, isLoading, mutate } = useSWR<Procurement[]>("/api/procurements", fetcher);
+  const { data, error, isLoading, mutate } = useSWR<ProcurementWithCounts[]>("/api/procurements", fetcher);
 
   const create = async () => {
     mutate(); // Re-fetch all procurements
