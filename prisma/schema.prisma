@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  procurements Procurement[]
+  @@map("users")
+}
+
+model Procurement {
+  id              String             @id @default(cuid())
+  title           String
+  category        String
+  referenceNumber String?
+  status          ProcurementStatus  @default(DRAFT)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  createdById     String
+  createdBy       User               @relation(fields: [createdById], references: [id])
+  bids            Bid[]
+  analysisResult  AnalysisResult?
+  report          Report?
+  @@map("procurements")
+}
+
+enum ProcurementStatus {
+  DRAFT
+  IMPORTED
+  ANALYZED
+  REPORTED
+}
+
+model Bid {
+  id            String      @id @default(cuid())
+  procurementId String
+  supplierName  String
+  importedAt    DateTime    @default(now())
+  procurement   Procurement @relation(fields: [procurementId], references: [id], onDelete: Cascade)
+  lineItems     LineItem[]
+  @@map("bids")
+}
+
+model LineItem {
+  id         String      @id @default(cuid())
+  bidId      String
+  itemName   String
+  itemCode   String?
+  unit       String?
+  price      Decimal?    @db.Decimal(12, 4)
+  priceNote  String?
+  bid        Bid         @relation(fields: [bidId], references: [id], onDelete: Cascade)
+  flagResult FlagResult?
+  @@map("line_items")
+}
+
+model AnalysisResult {
+  id            String          @id @default(cuid())
+  procurementId String          @unique
+  analyzedAt    DateTime        @default(now())
+  totalItems    Int
+  totalBids     Int
+  flaggedItems  Int
+  avgZScore     Float?
+  maxZScore     Float?
+  procurement   Procurement     @relation(fields: [procurementId], references: [id], onDelete: Cascade)
+  itemStats     ItemStatistic[]
+  @@map("analysis_results")
+}
+
+model ItemStatistic {
+  id                  String         @id @default(cuid())
+  analysisResultId    String
+  itemName            String
+  meanPrice           Decimal        @db.Decimal(12, 4)
+  medianPrice         Decimal        @db.Decimal(12, 4)
+  stdDev              Decimal        @db.Decimal(12, 4)
+  minPrice            Decimal        @db.Decimal(12, 4)
+  maxPrice            Decimal        @db.Decimal(12, 4)
+  priceRange          Decimal        @db.Decimal(12, 4)
+  sampleSize          Int
+  hasMissingPrices    Boolean        @default(false)
+  hasZeroPrices       Boolean        @default(false)
+  suspectedCollusion  Boolean        @default(false)
+  analysisResult      AnalysisResult @relation(fields: [analysisResultId], references: [id], onDelete: Cascade)
+  flagResults         FlagResult[]
+  @@map("item_statistics")
+}
+
+model FlagResult {
+  id              String        @id @default(cuid())
+  lineItemId      String        @unique
+  itemStatisticId String
+  zScore          Float
+  flagLevel       FlagLevel
+  flagReason      String?
+  reviewNote      String?
+  reviewedAt      DateTime?
+  lineItem        LineItem      @relation(fields: [lineItemId], references: [id], onDelete: Cascade)
+  itemStatistic   ItemStatistic @relation(fields: [itemStatisticId], references: [id], onDelete: Cascade)
+  @@map("flag_results")
+}
+
+enum FlagLevel {
+  NORMAL
+  WARNING
+  CRITICAL
+}
+
+model Report {
+  id            String      @id @default(cuid())
+  procurementId String      @unique
+  generatedAt   DateTime    @default(now())
+  filePath      String
+  fileSize      Int?
+  procurement   Procurement @relation(fields: [procurementId], references: [id], onDelete: Cascade)
+  @@map("reports")
+}
