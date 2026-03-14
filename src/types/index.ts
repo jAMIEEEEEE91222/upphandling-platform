@@ -7,9 +7,7 @@ export type {
   LineItem,
 } from "./procurement";
 export type {
-  AnalysisResult,
-  ItemStatistic,
-  FlagResult,
-  FlagLevel,
-  Report,
+  MatrixCell,
+  MatrixRow,
+  DeviationMatrixData,
 } from "./analysis";

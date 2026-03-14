@@ -25,10 +25,11 @@ function createColumns(suppliers: string[]) {
       id: "itemName",
       header: "Artikel",
       cell: (info) => (
-        <div className="py-2 pr-4 font-medium text-gray-900 min-w-[200px] max-w-[400px] truncate" title={info.getValue()}>
+        <div className="py-2 px-4 font-medium text-gray-900 min-w-[200px] max-w-[400px] truncate" title={info.getValue()}>
           {info.getValue()}
         </div>
       ),
+      filterFn: "includesString",
     }),
   ];
 
@@ -41,6 +42,7 @@ function createColumns(suppliers: string[]) {
           <DeviationCell cell={info.getValue()} />
         </div>
       ),
+      enableGlobalFilter: false,
     })
   );
 
@@ -54,11 +56,11 @@ export default function DeviationMatrix({ data }: DeviationMatrixProps) {
 
   const columns = useMemo(() => createColumns(data.suppliers), [data.suppliers]);
 
+  // Default-sortering: CRITICAL överst, sedan WARNING, sedan NORMAL
   const sortedAndFilteredData = useMemo(() => {
     let result = [...data.rows];
-    
-    // Default-sortering: CRITICAL överst, sedan WARNING, sedan NORMAL
-    const priority: Record<string, number> = { "CRITICAL": 3, "WARNING": 2, "NORMAL": 1 };
+
+    const priority: Record<string, number> = { CRITICAL: 3, WARNING: 2, NORMAL: 1 };
     result.sort((a, b) => {
       const pA = priority[a.highestFlagLevel || "NORMAL"] || 0;
       const pB = priority[b.highestFlagLevel || "NORMAL"] || 0;
@@ -66,24 +68,26 @@ export default function DeviationMatrix({ data }: DeviationMatrixProps) {
     });
 
     if (showOnlyFlagged) {
-      result = result.filter(r => r.highestFlagLevel === "WARNING" || r.highestFlagLevel === "CRITICAL");
+      result = result.filter(
+        (r) => r.highestFlagLevel === "WARNING" || r.highestFlagLevel === "CRITICAL"
+      );
     }
-    
+
     return result;
   }, [data.rows, showOnlyFlagged]);
 
   const table = useReactTable({
     data: sortedAndFilteredData,
     columns,
-    state: {
-      globalFilter,
-    },
+    state: { globalFilter },
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    globalFilterFn: (row, columnId, filterValue) => {
-      const value = row.getValue(columnId) as string;
-      return value.toLowerCase().includes(String(filterValue).toLowerCase());
+    globalFilterFn: (row, _columnId, filterValue) => {
+      // Sök bara på artikelnamn
+      const itemName = row.getValue("itemName") as string;
+      if (!itemName) return false;
+      return itemName.toLowerCase().includes(String(filterValue).toLowerCase());
     },
   });
 
@@ -99,9 +103,10 @@ export default function DeviationMatrix({ data }: DeviationMatrixProps) {
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder="Sök på artikelnamn..."
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            aria-label="Sök artikel"
           />
         </div>
-        
+
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
@@ -113,15 +118,15 @@ export default function DeviationMatrix({ data }: DeviationMatrixProps) {
         </label>
       </div>
 
-      {/* TanStack Table */}
+      {/* Tabell */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse" aria-label="Avvikelsematris">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="bg-gray-100 border-b border-gray-200">
                   {headerGroup.headers.map((header) => (
-                    <th key={header.id} className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                    <th key={header.id} scope="col" className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap font-semibold">
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </th>
                   ))}
@@ -137,10 +142,18 @@ export default function DeviationMatrix({ data }: DeviationMatrixProps) {
                 </tr>
               ) : (
                 table.getRowModel().rows.map((row) => (
-                  <tr 
-                    key={row.id} 
+                  <tr
+                    key={row.id}
                     className="hover:bg-blue-50 cursor-pointer group transition-colors"
                     onClick={() => setSelectedRow(row.original)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedRow(row.original);
+                      }
+                    }}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="p-0 border-r border-gray-200 last:border-r-0">
@@ -155,7 +168,7 @@ export default function DeviationMatrix({ data }: DeviationMatrixProps) {
         </div>
       </div>
 
-      <ItemDetailModal 
+      <ItemDetailModal
         isOpen={!!selectedRow}
         onClose={() => setSelectedRow(null)}
         row={selectedRow}

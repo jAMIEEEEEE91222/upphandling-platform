@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const procurement = await prisma.procurement.findUnique({
       where: { id: procurementId },
-      select: { createdById: true, status: true }
+      select: { createdById: true, status: true },
     });
 
     if (!procurement) {
@@ -49,18 +49,33 @@ export async function POST(request: NextRequest) {
     const analysisResult = await runAnalysis(procurementId);
 
     if (!analysisResult) {
-       return NextResponse.json({ data: null, error: "Serverfel vid analys" }, { status: 500 });
+      return NextResponse.json({ data: null, error: "Serverfel vid analys" }, { status: 500 });
     }
 
-    // Return summary
+    // Beräkna kritiska/varningar för summary
+    let flaggedCritical = 0;
+    let flaggedWarning = 0;
+
+    for (const stat of analysisResult.itemStats) {
+      let hasCritical = false;
+      let hasWarning = false;
+      for (const flag of stat.flagResults) {
+        if (flag.flagLevel === "CRITICAL") hasCritical = true;
+        if (flag.flagLevel === "WARNING") hasWarning = true;
+      }
+      if (hasCritical) flaggedCritical++;
+      else if (hasWarning) flaggedWarning++;
+    }
+
     const summary = {
       totalItems: analysisResult.totalItems,
       totalBids: analysisResult.totalBids,
       flaggedItems: analysisResult.flaggedItems,
+      flaggedCritical,
+      flaggedWarning,
     };
 
     return NextResponse.json({ data: summary, error: null }, { status: 200 });
-
   } catch (error) {
     console.error("Fel vid körning av analys:", error);
     return NextResponse.json({ data: null, error: "Ett oväntat fel uppstod" }, { status: 500 });

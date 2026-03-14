@@ -1,14 +1,25 @@
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { notFound, redirect } from "next/navigation";
 import AnalysisClientPage from "./AnalysisClientPage";
 
-export default async function AnalysisPage({ params }: { params: { id: string } }) {
+export default async function AnalysisPage(props: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
+  const params = await props.params;
+  const id = params?.id;
+
+  if (!id) {
+    notFound();
+  }
+
   const procurement = await prisma.procurement.findUnique({
-    where: { id: params.id },
-    select: { id: true, status: true, title: true }
+    where: { id },
+    select: { id: true, status: true, title: true, createdById: true }
   });
 
-  if (!procurement) {
+  if (!procurement || procurement.createdById !== session.user.id) {
     notFound();
   }
 

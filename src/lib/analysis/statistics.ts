@@ -14,6 +14,7 @@ export function calculateMedian(prices: number[]): number {
 
 export function calculateStdDev(prices: number[], mean: number): number {
   if (prices.length < 2) return 0;
+  // Populationsvarians (σ²) – delat med n, inte n-1
   const variance = prices.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / prices.length;
   return Math.sqrt(variance);
 }

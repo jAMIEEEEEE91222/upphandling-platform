@@ -77,18 +77,23 @@ export async function POST(request: NextRequest) {
       let price: number | null = null;
       let priceNote: string | null = null;
 
-      if (rawPrice === 0 || rawPrice === "0") {
-        price = 0;
-        priceNote = "Nollpris";
-      } else if (rawPrice === undefined || rawPrice === null || rawPrice === "") {
-        price = null;
-      } else {
-        const numPrice = Number(rawPrice);
-        if (isNaN(numPrice)) {
-          price = null;
-          priceNote = String(rawPrice).substring(0, 100);
-        } else {
-          price = numPrice;
+      if (rawPrice !== undefined && rawPrice !== null && rawPrice !== "") {
+        let cleanStr = String(rawPrice).trim()
+          .replace(/\s+/g, '') // Ta bort blanksteg (ex. "1 000")
+          .replace(/\u00A0/g, ''); // Ta bort non-breaking spaces
+          
+        // Byt kommatecken till punkt för decimaler
+        cleanStr = cleanStr.replace(',', '.');
+
+        if (cleanStr !== "") {
+          const numPrice = Number(cleanStr);
+          if (!isNaN(numPrice)) {
+            price = numPrice;
+            if (numPrice === 0) priceNote = "Nollpris";
+          } else {
+            price = null;
+            priceNote = `Kunde ej tolka: ${String(rawPrice).substring(0, 50)}`;
+          }
         }
       }
 

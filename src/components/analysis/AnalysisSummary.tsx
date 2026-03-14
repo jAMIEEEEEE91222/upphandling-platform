@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { BarChart2, AlertCircle, AlertTriangle } from "lucide-react";
 
 interface AnalysisSummaryProps {
@@ -14,16 +15,22 @@ interface AnalysisSummaryProps {
 }
 
 export default function AnalysisSummary({ summary }: AnalysisSummaryProps) {
-  const date = new Intl.DateTimeFormat("sv-SE", {
-    dateStyle: "short",
-    timeStyle: "short"
-  }).format(new Date(summary.analyzedAt));
+  const formattedDate = useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat("sv-SE", {
+        dateStyle: "short",
+        timeStyle: "short",
+      }).format(new Date(summary.analyzedAt));
+    } catch {
+      return summary.analyzedAt;
+    }
+  }, [summary.analyzedAt]);
 
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Sammanfattning av analys</h2>
-        <span className="text-sm text-gray-500">Senast analyserad: {date}</span>
+        <span className="text-sm text-gray-500">Senast analyserad: {formattedDate}</span>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
